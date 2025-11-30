@@ -1,0 +1,138 @@
+﻿@model List<WebControlRoom.Models.Room>
+
+@{
+    ViewData["Title"] = "Аудитории";
+    var query = Context.Request.Query;
+}
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<div class="container">
+    <div class="main-container">
+        <div class="header-section">
+            <h1><i class="fas fa-door-open me-2"></i>Диспетчер аудиторий</h1>
+            <p>Найдите свободные аудитории по фильтрам</p>
+        </div>
+
+        <!-- Фильтры -->
+        <form method="get" class="filters-form">
+            <!-- Пара -->
+            <div class="filter-group">
+                <label><i class="fas fa-clock me-1"></i>Пара</label>
+                <select class="form-select" name="classTimeId">
+                    <option value="">Все</option>
+                    @foreach (var ct in ViewBag.ClassTimes)
+                    {
+                        if (query["classTimeId"] == ct.Id.ToString())
+                        {
+                            <option value="@ct.Id" selected="selected">
+                                @ct.Number пара (@ct.StartTime - @ct.EndTime)
+                            </option>
+                        }
+                        else
+                        {
+                            <option value="@ct.Id">
+                                @ct.Number пара (@ct.StartTime - @ct.EndTime)
+                            </option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <!-- Корпус -->
+            <div class="filter-group">
+                <label><i class="fas fa-building me-1"></i>Корпус</label>
+                <select class="form-select" name="buildingId">
+                    <option value="">Все</option>
+                    @foreach (var b in ViewBag.Buildings)
+                    {
+                        if (query["buildingId"] == b.Id.ToString())
+                        {
+                            <option value="@b.Id" selected="selected">#@b.Number</option>
+                        }
+                        else
+                        {
+                            <option value="@b.Id">#@b.Number</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <!-- Мин. вместимость -->
+            <div class="filter-group">
+                <label><i class="fas fa-users me-1"></i>Мин. вместимость</label>
+                <input type="number" name="minCapacity" class="form-control" min="1" value="@query["minCapacity"]" />
+            </div>
+
+            <!-- Тип аудитории -->
+            <div class="filter-group">
+                <label><i class="fas fa-chalkboard me-1"></i>Тип аудитории</label>
+                <select class="form-select" name="roomTypeId">
+                    <option value="">Все</option>
+                    @foreach (var rt in ViewBag.RoomTypes)
+                    {
+                        if (query["roomTypeId"] == rt.Id.ToString())
+                        {
+                            <option value="@rt.Id" selected="selected">@rt.TypeName</option>
+                        }
+                        else
+                        {
+                            <option value="@rt.Id">@rt.TypeName</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <!-- Дата -->
+            <div class="filter-group">
+                <label><i class="fas fa-calendar-alt me-1"></i>Дата</label>
+                <input type="date" name="date" class="form-control" required value="@query["date"]" />
+            </div>
+
+            <!-- Кнопка -->
+            <div class="filter-group">
+                <button type="submit" class="btn-filter w-100">
+                    <i class="fas fa-search me-2"></i>Найти
+                </button>
+            </div>
+        </form>
+
+        <!-- Результаты -->
+        @if (Model != null && Model.Count > 0)
+        {
+            <div class="table-wrapper">
+                <table class="table custom-table table-striped" id="roomsTable">
+                    <thead>
+                        <tr>
+                            <th onclick="sortTable(0)"><div class="table-header-fix">Аудитория</div></th>
+                            <th class="col-small" onclick="sortTable(1)"><div class="table-header-fix">Вместимость</div></th>
+                            <th class="col-small" onclick="sortTable(2)"><div class="table-header-fix">Корпус</div></th>
+                            <th onclick="sortTable(3)"><div class="table-header-fix">Тип</div></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var r in Model)
+                        {
+                            <tr>
+                                <td><strong>@r.RoomNumber</strong></td>
+                                <td>@r.Capacity</td>
+                                <td>@r.Building?.Number</td>
+                                <td>@r.RoomType?.TypeName</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="no-results">
+                <i class="fas fa-door-closed"></i>
+                <h4>Свободные аудитории не найдены</h4>
+                <p>Попробуйте изменить параметры фильтров</p>
+            </div>
+        }
+    </div>
+</div>
+
