@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
+
 namespace WebControlRoom.Models
 {
     public class DispatcherContext : DbContext
@@ -14,9 +15,20 @@ namespace WebControlRoom.Models
         public DbSet<WeekDay> WeekDays { get; set; }
         public DbSet<ClassTime> ClassTimes { get; set; }
         public DbSet<RoomOccupancy> RoomOccupancies { get; set; }
+        public DbSet<EmailConfirmCode> EmailConfirmCodes { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<EmailConfirmCode>(entity =>
+            {
+                entity.ToTable("КодПодтвержденияПочты");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("Код");
+                entity.Property(e => e.Email).HasColumnName("Почта");
+                entity.Property(e => e.Code).HasColumnName("КодПодтверждения");
+                entity.Property(e => e.ExpireAt).HasColumnName("ДатаИстечения");
+            });
             // ---------------- Buildings ----------------
             modelBuilder.Entity<Building>(entity =>
             {
@@ -59,6 +71,7 @@ namespace WebControlRoom.Models
                 entity.Property(e => e.Capacity).HasColumnName("Вместимость");
                 entity.Property(e => e.RoomTypeId).HasColumnName("КодВида");
                 entity.Property(e => e.BuildingId).HasColumnName("КодКорпуса");
+                entity.Property(e => e.Multimedia).HasColumnName("Мультимедиа"); 
 
                 entity.HasOne(r => r.RoomType)
                       .WithMany(rt => rt.Rooms)

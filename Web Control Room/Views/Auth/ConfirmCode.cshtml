@@ -1,0 +1,22 @@
+﻿@{
+    ViewData["Title"] = "Подтверждение";
+}
+
+<div class="d-flex justify-content-center align-items-center vh-100">
+    <div class="login-box p-4">
+        <h2 class="text-center mb-3">Подтверждение</h2>
+        <p class="text-center mb-3">Введите код из письма</p>
+
+        <form method="post" asp-action="ConfirmCode" class="d-flex flex-column gap-2">
+            <input type="hidden" name="email" value="@ViewBag.Email" />
+            <input type="text" name="code" class="form-control" placeholder="Код" required autofocus />
+
+            <button type="submit" class="btn btn-gradient mt-2">Войти</button>
+
+            @if (ViewBag.Error != null)
+            {
+                <div class="text-danger text-center mt-2">@ViewBag.Error</div>
+            }
+        </form>
+    </div>
+</div>

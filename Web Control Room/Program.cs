@@ -3,19 +3,27 @@ using WebControlRoom.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Добавляем строку подключения
+// Строка подключения
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-// Добавляем DbContext
+// DbContext
 builder.Services.AddDbContext<DispatcherContext>(options =>
     options.UseSqlServer(connectionString));
 
-// Добавляем MVC
+// MVC
 builder.Services.AddControllersWithViews();
+
+// Сессии (для хранения залогиненного пользователя)
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
 
 var app = builder.Build();
 
-// Настройка пайплайна
+// Пайплайн
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -27,11 +35,13 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+// ВАЖНО: сначала сессии, потом авторизация
+app.UseSession();
 app.UseAuthorization();
 
 // Роутинг по умолчанию
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Auth}/{action=Login}/{id?}");
 
 app.Run();

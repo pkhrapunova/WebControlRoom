@@ -18,23 +18,54 @@ namespace WebControlRoom.Controllers
             int? roomTypeId,
             int? classTimeId,
             int? minCapacity,
+            bool? hasMultimedia,
             DateTime? date)
         {
-            // Загружаем данные для фильтров
             ViewBag.Buildings = await _context.Buildings.ToListAsync();
             ViewBag.RoomTypes = await _context.RoomTypes.ToListAsync();
             ViewBag.ClassTimes = await _context.ClassTimes.ToListAsync();
+            ViewBag.SelectedMultimedia = hasMultimedia;
 
-            // Если дата или пара не выбраны — возвращаем пустой список
-            if (!date.HasValue || !classTimeId.HasValue)
+            if (!date.HasValue)
             {
-                return View(new List<Room>());
+                date = DateTime.Today;
+            }
+            ViewBag.SelectedDate = date.Value.ToString("yyyy-MM-dd");
+
+            var now = DateTime.Now.TimeOfDay;
+
+            var currentClassTimeId = await _context.ClassTimes
+                .Where(p => p.StartTime <= now && p.EndTime >= now)
+                .Select(p => p.Id)
+                .FirstOrDefaultAsync();
+
+            if (currentClassTimeId == 0)
+            {
+                currentClassTimeId = await _context.ClassTimes
+                    .Where(p => p.StartTime > now)
+                    .OrderBy(p => p.StartTime)
+                    .Select(p => p.Id)
+                    .FirstOrDefaultAsync();
             }
 
-            var dayOfWeek = (int)date.Value.DayOfWeek;
-            dayOfWeek = dayOfWeek == 0 ? 7 : dayOfWeek; // Преобразуем: Sunday=7
+            if (currentClassTimeId == 0)
+            {
+                currentClassTimeId = await _context.ClassTimes
+                    .OrderByDescending(p => p.StartTime)
+                    .Select(p => p.Id)
+                    .FirstOrDefaultAsync();
+            }
 
-            // Находим занятые аудитории на выбранную дату и день недели
+            if (!classTimeId.HasValue)
+            {
+                classTimeId = currentClassTimeId;
+            }
+
+            ViewBag.SelectedClassTimeId = classTimeId;
+
+            var dayOfWeek = (int)date.Value.DayOfWeek;
+            dayOfWeek = dayOfWeek == 0 ? 7 : dayOfWeek;
+
             var occupiedRooms = _context.RoomOccupancies
                 .Where(o => o.ClassTimeId == classTimeId
                             && date >= o.StartDate
@@ -42,15 +73,16 @@ namespace WebControlRoom.Controllers
                             && o.WeekDayId == dayOfWeek)
                 .Select(o => o.RoomId);
 
-            // Находим свободные аудитории
-            var freeRooms = await _context.Rooms
+            var freeRoomsQuery = _context.Rooms
                 .Where(r => !occupiedRooms.Contains(r.Id))
                 .Where(r => !buildingId.HasValue || r.BuildingId == buildingId)
                 .Where(r => !roomTypeId.HasValue || r.RoomTypeId == roomTypeId)
                 .Where(r => !minCapacity.HasValue || r.Capacity >= minCapacity)
+                .Where(r => !hasMultimedia.HasValue || r.Multimedia == hasMultimedia)
                 .Include(r => r.Building)
-                .Include(r => r.RoomType)
-                .ToListAsync();
+                .Include(r => r.RoomType);
+
+            var freeRooms = await freeRoomsQuery.ToListAsync();
 
             return View(freeRooms);
         }
